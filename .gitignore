@@ -1,0 +1,11 @@
+# 仮想環境
+venv/
+.venv/
+
+# Pythonキャッシュ
+__pycache__/
+*.pyc
+
+# IDEの設定ファイル (例: VSCode, PyCharm)
+.vscode/
+.idea/
