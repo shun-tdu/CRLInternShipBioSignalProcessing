@@ -193,8 +193,40 @@ def _():
 
 @app.cell
 def _(glob, mo, os):
-    # CSVファイル一覧を取得（相対パス）
-    csv_files = glob.glob("data/15Subjects-7Gestures/*/*.csv")
+    # CSVファイル一覧を取得（WASM対応）
+    try:
+        # marimo.notebook_location()を使用してWASM対応のパス取得
+        notebook_location = mo.notebook_location()
+        if notebook_location:
+            # WASM環境ではpublicフォルダからデータを取得
+            data_path = notebook_location / "public" / "data" / "15Subjects-7Gestures" / "*" / "*.csv"
+            csv_files = glob.glob(str(data_path))
+            # WASM環境でglob.globが機能しない場合の手動ファイルリスト作成
+            if not csv_files:
+                # 既知のファイルパターンで手動リストを作成
+                subjects = [f"S{i}" for i in range(15)]
+                gestures = ["emg-fistdwn",
+                            "emg-fistout",
+                            "emg-left",
+                            "emg-neut",
+                            "emg-opendwn",
+                            "emg-openout",
+                            "emg-right",
+                            "emg-tap",
+                            "emg-twodwn",
+                            "emg-twout"]
+                csv_files = []
+                for subject in subjects:
+                    for gesture in gestures:
+                        file_path = notebook_location / "public" / "data" / "15Subjects-7Gestures" / subject / f"{gesture}-{subject}.csv"
+                        csv_files.append(str(file_path))
+        else:
+            # フォールバック: 従来の相対パス
+            csv_files = glob.glob("data/15Subjects-7Gestures/*/*.csv")
+    except Exception:
+        # エラー時のフォールバック
+        csv_files = glob.glob("data/15Subjects-7Gestures/*/*.csv")
+    
     csv_files.sort()
 
     # ファイル選択のための辞書を作成（表示名: パス）
