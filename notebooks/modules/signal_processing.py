@@ -9,12 +9,7 @@ from scipy.fft import fft, fftfreq
 今回扱った以外の信号処理を追加したい場合も，入力と出力の型をPandasのデータフレームにすれば問題なく動作します．
 """
 
-def apply_lowpass_filter(
-        data: pd.DataFrame,
-        cutoff: float,
-        fs:float,
-        order: int = 4
-    ) -> pd.DataFrame:
+def apply_lowpass_filter(data: pd.DataFrame, cutoff: float, fs:float, order: int = 4) -> pd.DataFrame:
     """
     データフレームの各列にローパスフィルタを適用し，処理後のデータフレームを返す．
 

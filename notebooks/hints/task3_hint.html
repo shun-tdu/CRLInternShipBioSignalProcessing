@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>課題3 ヒント</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; margin: 20px; background-color: #f4f7f9; color: #333; }
+        .container { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1, h2, h3 { border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; }
+        .hint-section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .hint-button { background-color: #17a2b8; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 14px; margin-right: 5px; margin-bottom: 5px; }
+        .hint-button:hover { background-color: #138496; }
+        .hint-content { display: none; background-color: #e2f4f7; border: 1px solid #b3e0e6; border-radius: 5px; padding: 15px; margin-top: 10px; }
+        code { background-color: #eee; padding: 2px 4px; border-radius: 3px; font-family: 'Courier New', Courier, monospace; }
+        .code-block { background-color: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>課題3: インタラクティブなアプリケーションの構築</h1>
+        <p>この課題では、これまでに作成した関数を使い、<code>marimo</code>というツールでUI付きのアプリケーションを作成します。</p>
+
+        <!-- Marimoの基本 -->
+        <div class="hint-section">
+            <h2>ステップ1：Marimoの基本を理解する</h2>
+            <p>marimoは、Jupyter Notebookとは少し違う、新しいタイプのノートブックです。</p>
+            <button class="hint-button" onclick="toggleHint('marimo1')">ヒント1: Marimoの「リアクティブ」とは？</button>
+            <div id="marimo1" class="hint-content">
+                <b>リアクティブ（反応的）とは？:</b><br>
+                Excelのセルをイメージしてください。あるセルの値（例: <code>=A1+B1</code>）は、参照しているセル（A1やB1）の値が変わると自動的に再計算されますよね。<br>
+                Marimoも同じです。あるコードブロック（セル）が使っている変数の値が変わると、そのセルは**自動的に再実行**されます。これがmarimoの最大の特徴です。
+            </div>
+            <button class="hint-button" onclick="toggleHint('marimo2')">ヒント2: セルと変数</button>
+            <div id="marimo2" class="hint-content">
+                <b>セルと変数:</b><br>
+                marimoでは、コードはいくつかの「セル」に分割して書きます。あるセルで定義した変数は、他のセルから参照できます。
+                <div class="code-block">
+                # --- セル1 --- <br>
+                x = 10 <br><br>
+                # --- セル2 --- <br>
+                y = x * 2 # セル1のxを参照 <br>
+                print(y) # 20と表示される
+                </div>
+                もし、セル1の<code>x</code>を<code>20</code>に変えると、セル2は自動で再実行され、表示が<code>40</code>に変わります。
+            </div>
+        </div>
+
+        <!-- アプリケーションの構築 -->
+        <div class="hint-section">
+            <h2>ステップ2：アプリケーションの部品を作る</h2>
+            <p>marimoのUI要素を使って、ユーザーが操作できる部品を作成します。</p>
+            <button class="hint-button" onclick="toggleHint('ui1')">ヒント1: 関数のインポート</button>
+            <div id="ui1" class="hint-content">
+                <b>関数のインポート:</b><br>
+                まず、課題1と2で作成した関数をインポートします。ファイルを<code>modules</code>フォルダに置いた場合、以下のように書きます。
+                <div class="code-block">
+                from modules.data_loader import load_data <br>
+                from modules.signal_processing import apply_lowpass_filter # ...など
+                </div>
+            </div>
+            <button class="hint-button" onclick="toggleHint('ui2')">ヒント2: UIコンポーネントの作成</button>
+            <div id="ui2" class="hint-content">
+                <b>UIコンポーネントの作成:</b><br>
+                <code>marimo.ui</code>（通常は<code>mo.ui</code>として使う）には、スライダーやドロップダウンなどのUI部品が用意されています。
+                <div class="code-block">
+                # カットオフ周波数を決めるスライダー<br>
+                cutoff_slider = mo.ui.slider(start=1.0, stop=100.0, value=10.0) <br><br>
+                # フィルタを選ぶドロップダウン<br>
+                filter_selector = mo.ui.dropdown(options=["LPF", "HPF"])
+                </div>
+                これらのUI部品自体が「変数」になります。
+            </div>
+             <button class="hint-button" onclick="toggleHint('ui3')">ヒント3: UIの値を取得する方法</button>
+            <div id="ui3" class="hint-content">
+                <b>UIの値を取得する方法:</b><br>
+                UI部品の現在の値は、<code>.value</code>プロパティで取得できます。
+                <div class="code-block">
+                # スライダーの現在の値を取得<br>
+                current_cutoff = cutoff_slider.value <br><br>
+                # ドロップダウンで選択されている値を取得<br>
+                selected_filter = filter_selector.value
+                </div>
+                ユーザーがUIを操作すると、この<code>.value</code>が変わり、この変数を使っている他のセルが自動で再実行されます。これが「UIとロジックの連携」の仕組みです。
+            </div>
+        </div>
+
+        <!-- 全体の組み立て -->
+        <div class="hint-section">
+            <h2>ステップ3：全体を組み立てる</h2>
+            <p>作成した部品を組み合わせて、アプリケーションを完成させます。</p>
+            <button class="hint-button" onclick="toggleHint('asm1')">ヒント1: フィルタの適用</button>
+            <div id="asm1" class="hint-content">
+                <b>フィルタの適用:</b><br>
+                UIから取得した値を使って、信号処理関数を呼び出します。
+                <div class="code-block">
+                # フィルタ選択UI<br>
+                filter_selection = mo.ui.multiselect(options=["ローパス", "ハイパス"])<br><br>
+                # 別のセルで...<br>
+                processed_data = raw_data.copy()<br>
+                if "ローパス" in filter_selection.value:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;processed_data = apply_lowpass_filter(processed_data, ...)<br>
+                if "ハイパス" in filter_selection.value:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;processed_data = apply_highpass_filter(processed_data, ...)
+                </div>
+            </div>
+            <button class="hint-button" onclick="toggleHint('asm2')">ヒント2: グラフの表示</button>
+            <div id="asm2" class="hint-content">
+                <b>グラフの表示:</b><br>
+                Plotlyで作成したグラフオブジェクト(<code>fig</code>)は、そのままでは表示されません。<code>mo.ui.plotly()</code>で囲む必要があります。
+                <div class="code-block">
+                # 別のセルで...<br>
+                fig = plot_data(processed_data) # 課題1で作った関数<br>
+                mo.ui.plotly(fig) # これでグラフが表示される
+                </div>
+            </div>
+            <button class="hint-button" onclick="toggleHint('asm3')">ヒント3: レイアウト</button>
+            <div id="asm3" class="hint-content">
+                <b>レイアウト:</b><br>
+                複数のUI部品やグラフをきれいに並べたい場合は、<code>mo.vstack([...])</code>（縦に並べる）や<code>mo.hstack([...])</code>（横に並べる）が便利です。
+                <div class="code-block">
+                mo.vstack([<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;mo.md("### フィルタ設定"),<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;cutoff_slider,<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;filter_selector<br>
+                ])
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function toggleHint(id) {
+            const element = document.getElementById(id);
+            if (element.style.display === "none" || element.style.display === "") {
+                element.style.display = "block";
+            } else {
+                element.style.display = "none";
+            }
+        }
+    </script>
+
+</body>
+</html>

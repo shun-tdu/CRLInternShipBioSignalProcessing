@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>課題1 ヒント</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #f4f7f9;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        .hint-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .hint-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        .hint-button:hover {
+            background-color: #0056b3;
+        }
+        .hint-content {
+            display: none; /* 最初は隠しておく */
+            background-color: #e9f5ff;
+            border: 1px solid #b3d7ff;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        code {
+            background-color: #eee;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>課題1: データの読み込みと可視化</h1>
+        <p>各ステップのヒントを順番に見て、実装に挑戦してみましょう！</p>
+
+        <!-- ステップ1: データ読み込み -->
+        <div class="hint-section">
+            <h2>ステップ1：データ読み込み関数の作成</h2>
+            <p><code>load_data(filepath)</code> という関数を実装します。</p>
+
+            <button class="hint-button" onclick="toggleHint('hint1-1')">ヒント1: 使うライブラリ</button>
+            <div id="hint1-1" class="hint-content">
+                <strong>使うライブラリ:</strong><br>
+                この処理には、データ分析の定番ライブラリである <strong>Pandas</strong> を使います。CSVファイルを読み込むための、とても便利な関数が用意されています。
+            </div>
+
+            <button class="hint-button" onclick="toggleHint('hint1-2')">ヒント2: どの関数を使う？</button>
+            <div id="hint1-2" class="hint-content">
+                <strong>どの関数を使う？:</strong><br>
+                Pandasライブラリ（慣習的に<code>pd</code>としてインポートします）には、<code>read_csv()</code>という、そのものずばりの関数があります。まずはこの関数の使い方を調べてみましょう。<br>
+                <code>df = pd.read_csv("ファイルのパス")</code> のような形で使います。
+            </div>
+
+            <button class="hint-button" onclick="toggleHint('hint1-3')">ヒント3: エラー処理</button>
+            <div id="hint1-3" class="hint-content">
+                <strong>エラー処理:</strong><br>
+                もし存在しないファイルパスが指定された場合、プログラムはエラーで停止してしまいます。これを避けるために、Pythonの <strong><code>try-except</code></strong> 構文を使って、エラー処理を追加してみましょう。<code>FileNotFoundError</code> というエラーを捕まえるのがポイントです。
+            </div>
+        </div>
+
+        <!-- ステップ2: データ描画 -->
+        <div class="hint-section">
+            <h2>ステップ2：データ描画関数の作成</h2>
+            <p><code>plot_data(df)</code> という関数を実装します。</p>
+
+            <button class="hint-button" onclick="toggleHint('hint2-1')">ヒント1: 使うライブラリ</button>
+            <div id="hint2-1" class="hint-content">
+                <strong>使うライブラリ:</strong><br>
+                グラフ描画には、インタラクティブなグラフを簡単に作れる <strong><code>plotly.express</code></strong> を使います。慣習的に <code>px</code> という名前でインポートします。
+            </div>
+
+            <button class="hint-button" onclick="toggleHint('hint2-2')">ヒント2: グラフの種類</button>
+            <div id="hint2-2" class="hint-content">
+                <strong>グラフの種類:</strong><br>
+                時系列データを表示するには、折れ線グラフが適しています。<code>px.line()</code> という関数を使ってみましょう。<br>
+                <code>fig = px.line(df, ...)</code> のように使います。x軸にデータフレームのインデックス（時間）、y軸に各列のデータを指定するのがポイントです。
+            </div>
+
+            <button class="hint-button" onclick="toggleHint('hint2-3')">ヒント3: グラフの見た目</button>
+            <div id="hint2-3" class="hint-content">
+                <strong>グラフの見た目:</strong><br>
+                グラフのタイトルや軸ラベルを付け加えると、より分かりやすくなります。作成したグラフオブジェクト <code>fig</code> の <code>update_layout()</code> というメソッドで設定できます。
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleHint(id) {
+            const element = document.getElementById(id);
+            if (element.style.display === "none" || element.style.display === "") {
+                element.style.display = "block";
+            } else {
+                element.style.display = "none";
+            }
+        }
+    </script>
+
+</body>
+</html>
