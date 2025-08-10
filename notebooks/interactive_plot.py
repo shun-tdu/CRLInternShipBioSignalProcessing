@@ -193,42 +193,72 @@ def _():
 
 @app.cell
 def _(glob, mo, os):
-    # CSVファイル一覧を取得（WASM対応）
+    # CSVファイル一覧を取得（WASM対応・デバッグ強化版）
+    debug_info = []
     try:
         # marimo.notebook_location()を使用してWASM対応のパス取得
         notebook_location = mo.notebook_location()
+        debug_info.append(f"notebook_location: {notebook_location}")
+        
         if notebook_location:
-            # WASM環境では確実に存在するファイルのみをリストに含める
-            # 全てのsubject/gestureの組み合わせをチェック
+            # GitHub Pages環境では、サブディレクトリにデプロイされる可能性があるため
+            # 複数のパスパターンを試す
+            possible_paths = [
+                "public/data/15Subjects-7Gestures",  # 直接パス
+                "/public/data/15Subjects-7Gestures", # 絶対パス
+            ]
+            
+            # 実際に存在するファイルの組み合わせを定義
             subjects_gestures = [
                 ("S0", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-openout", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
                 ("S1", ["emg-fistdwn", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
-                ("S2", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-openout", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
-                ("S3", ["emg-fistdwn", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
-                ("S4", ["emg-fistdwn", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
-                ("S5", ["emg-fistdwn", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
-                ("S6", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-openout", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
-                ("S7", ["emg-fistdwn", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
-                ("S8", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
-                ("S9", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-openout", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
-                ("S10", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-openout", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
-                ("S11", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-openout", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
-                ("S12", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-openout", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
-                ("S13", ["emg-fistdwn", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
-                ("S14", ["emg-fistdwn", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"])
+                ("S2", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-openout", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"])
             ]
             
             csv_files = []
-            for subject, gestures in subjects_gestures:
-                for gesture in gestures:
-                    file_path = notebook_location / "public" / "data" / "15Subjects-7Gestures" / subject / f"{gesture}-{subject}.csv"
-                    csv_files.append(str(file_path))
+            
+            # 各パスパターンを試す
+            for base_path in possible_paths:
+                if str(notebook_location).startswith('http'):
+                    # Web環境の場合、URLとして構築
+                    for subject, gestures in subjects_gestures:
+                        for gesture in gestures:
+                            file_url = f"{notebook_location.rstrip('/')}/{base_path.lstrip('/')}/{subject}/{gesture}-{subject}.csv"
+                            csv_files.append(file_url)
+                            debug_info.append(f"Generated URL: {file_url}")
+                    break
+                else:
+                    # ローカル環境の場合、パスとして構築
+                    for subject, gestures in subjects_gestures:
+                        for gesture in gestures:
+                            file_path = notebook_location / base_path / subject / f"{gesture}-{subject}.csv"
+                            csv_files.append(str(file_path))
+                            debug_info.append(f"Generated path: {file_path}")
+                    break
+                    
+            # より多くのファイルを追加（テスト用）
+            if len(csv_files) < 10:  # もし少なすぎる場合
+                for i in range(4, 15):
+                    subject = f"S{i}"
+                    for gesture in ["emg-fistdwn", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]:
+                        if str(notebook_location).startswith('http'):
+                            file_url = f"{notebook_location.rstrip('/')}/public/data/15Subjects-7Gestures/{subject}/{gesture}-{subject}.csv"
+                            csv_files.append(file_url)
+                        else:
+                            file_path = notebook_location / "public" / "data" / "15Subjects-7Gestures" / subject / f"{gesture}-{subject}.csv"
+                            csv_files.append(str(file_path))
         else:
             # フォールバック: 従来の相対パス
             csv_files = glob.glob("data/15Subjects-7Gestures/*/*.csv")
-    except Exception:
+            debug_info.append("Using fallback glob pattern")
+            
+    except Exception as e:
         # エラー時のフォールバック
         csv_files = glob.glob("data/15Subjects-7Gestures/*/*.csv")
+        debug_info.append(f"Exception occurred: {str(e)}")
+        
+    debug_info.append(f"Total files found: {len(csv_files)}")
+    debug_info.append(f"First few files: {csv_files[:3] if csv_files else 'None'}")
     
     csv_files.sort()
 
@@ -244,9 +274,18 @@ def _(glob, mo, os):
     file_selector = None
     display_content = None
     
+    # デバッグ情報の表示
+    debug_content = mo.md(f"""
+    ### 🐛 デバッグ情報
+    {chr(10).join(debug_info)}
+    """)
+    
     if not file_options:
         # CSVファイルが見つからない場合のエラーメッセージ
-        display_content = mo.md("❌ CSVファイルが見つかりません。データフォルダの場所を確認してください。")
+        display_content = mo.vstack([
+            mo.md("❌ CSVファイルが見つかりません。データフォルダの場所を確認してください。"),
+            debug_content
+        ])
     else:
         # デフォルトファイルを設定
         default_display = "S0/emg-fistdwn-S0.csv"
@@ -263,7 +302,8 @@ def _(glob, mo, os):
         
         display_content = mo.vstack([
             mo.md("### 📁 ファイル選択"),
-            file_selector
+            file_selector,
+            debug_content
         ])
     
     # 常に何かを表示
