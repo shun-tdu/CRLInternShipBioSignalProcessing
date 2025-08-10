@@ -33,10 +33,10 @@ def _():
 
 @app.cell
 def _(glob, mo, os):
-    # CSVファイル一覧を取得
+    # CSVファイル一覧を取得（相対パス）
     csv_files = glob("data/15Subjects-7Gestures/*/*.csv")
     csv_files.sort()
-    
+
     # ファイル選択のための辞書を作成（表示名: パス）
     file_options = {}
     for file_path in csv_files:
@@ -46,51 +46,68 @@ def _(glob, mo, os):
         display_name = f"{dirname}/{basename}"
         file_options[display_name] = file_path
     
-    # デフォルトファイルを設定
-    default_display = "S0/emg-fistdwn-S0.csv"
-    if default_display not in file_options:
-        default_display = list(file_options.keys())[0]
+    file_selector = None
+    display_content = None
     
-    # ファイル選択ドロップダウン
-    file_selector = mo.ui.dropdown(
-        options=file_options,
-        value=default_display,
-        label="CSVファイルを選択",
-        searchable=True
-    )
+    if not file_options:
+        # CSVファイルが見つからない場合のエラーメッセージ
+        display_content = mo.md("❌ CSVファイルが見つかりません。データフォルダの場所を確認してください。")
+    else:
+        # デフォルトファイルを設定
+        default_display = "S0/emg-fistdwn-S0.csv"
+        if default_display not in file_options:
+            default_display = list(file_options.keys())[0]
+        
+        # ファイル選択ドロップダウン
+        file_selector = mo.ui.dropdown(
+            options=file_options,
+            value=default_display,
+            label="CSVファイルを選択",
+            searchable=True
+        )
+        
+        display_content = mo.vstack([
+            mo.md("### 📁 ファイル選択"),
+            file_selector
+        ])
     
-    mo.vstack([
-        mo.md("### 📁 ファイル選択"),
-        file_selector
-    ])
+    # 常に何かを表示
+    display_content
 
     return file_selector
 
 
 @app.cell
 def _(file_selector, load_data, mo, np, os):
+    import pandas as pd
     SAMPLING_RATE = 200 
-
-    raw_data = load_data(file_selector.value)
-
-    if not raw_data.empty:
-        # 200Hzの時間軸を作成（0秒スタート）
-        time_interval = 1.0 / SAMPLING_RATE  # 0.005秒間隔
-        raw_data.index = np.arange(len(raw_data)) * time_interval
-        total_duration = raw_data.index[-1]
-
-        selected_file_name = os.path.basename(file_selector.value)
-        info_message = f"""
-        📊 **データ読み込み完了**
-        - 選択ファイル: {selected_file_name}
-        - サンプル数: {len(raw_data)}
-        - 総時間: {total_duration:.2f} 秒
-        - サンプリング周波数: {SAMPLING_RATE} Hz
-        - 時間間隔: {time_interval:.3f} 秒
-        """
-    else:
+    
+    # file_selectorがNoneの場合（CSVファイルが見つからない場合）の処理
+    if file_selector is None:
+        raw_data = pd.DataFrame()
         total_duration = 0.0
-        info_message = "❌ データの読み込みに失敗しました"
+        info_message = "❌ CSVファイルが見つからないため、データを読み込めません"
+    else:
+        raw_data = load_data(file_selector.value)
+
+        if not raw_data.empty:
+            # 200Hzの時間軸を作成（0秒スタート）
+            time_interval = 1.0 / SAMPLING_RATE  # 0.005秒間隔
+            raw_data.index = np.arange(len(raw_data)) * time_interval
+            total_duration = raw_data.index[-1]
+
+            selected_file_name = os.path.basename(file_selector.value)
+            info_message = f"""
+            📊 **データ読み込み完了**
+            - 選択ファイル: {selected_file_name}
+            - サンプル数: {len(raw_data)}
+            - 総時間: {total_duration:.2f} 秒
+            - サンプリング周波数: {SAMPLING_RATE} Hz
+            - 時間間隔: {time_interval:.3f} 秒
+            """
+        else:
+            total_duration = 0.0
+            info_message = "❌ データの読み込みに失敗しました"
 
     mo.md(info_message)
 

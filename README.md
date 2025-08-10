@@ -2,7 +2,7 @@
 
 ---
 
-# 生体信号解析インターンシップ課題 🔬
+# 🔬 生体信号解析インターンシップ課題 🔬
 
 このリポジトリは、協調ロボティクス研究室のインターンシップで利用する生体信号解析の課題管理用です。 CSVデータの可視化から、信号処理、インタラクティブなグラフ作成までを実践的に学びます。
 
@@ -66,13 +66,16 @@
 
 ```bash
 # 課題1の実行
-python task1.py
+marimo edit notebooks/task1.py
 
 # 課題2の実行
-python task2.py
+marimo edit notebooks/task2.py
 
-# 課題3の実行 (marimo)
-marimo run task3.py
+# 課題3の実行 
+marimo edit notebooks/task3.py
+
+# marimo notebookのweb形式での実行
+marimo run notebooks/task3.py
 ```
 
 ---
