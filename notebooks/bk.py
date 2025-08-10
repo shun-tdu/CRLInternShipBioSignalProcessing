@@ -8,169 +8,13 @@ app = marimo.App(width="full")
 def _():
     import marimo as mo
     import numpy as np
-    import pandas as pd
     import os
-    import glob
-    import plotly.express as px
-    from scipy.signal import butter, filtfilt, iirnotch, resample
-    from scipy.fft import fft, fftfreq
-    
-    # === データ読み込み関数 ===
-    def load_data(filepath: str) -> pd.DataFrame:
-        """CSVファイルを読み込み，Pandasデータフレームとして返す．"""
-        try:
-            df = pd.read_csv(filepath, index_col=0)
-            df.index = pd.to_datetime(df.index, unit='ns')
-            return df
-        except FileNotFoundError:
-            return pd.DataFrame()
-        except Exception as e:
-            return pd.DataFrame()
-    
-    # === プロット関数 ===
-    def plot_data(df: pd.DataFrame, title: str = "Signal Data"):
-        """データフレームをインタラクティブなグラフとして描画する．"""
-        if df.empty:
-            return px.line(title="データがありません")
-        
-        fig = px.line(df, x=df.index, y=df.columns, title=title)
-        fig.update_layout(
-            xaxis_title='Time',
-            yaxis_title='Value',
-            legend_title='Signals'
-        )
-        return fig
-    
-    # === 信号処理関数 ===
-    def apply_lowpass_filter(data: pd.DataFrame, cutoff: float, fs: float, order: int = 4) -> pd.DataFrame:
-        """ローパスフィルタを適用"""
-        if data.empty or fs <= 0 or not 0 < cutoff < fs / 2:
-            return data.copy()
-        
-        numeric_cols = data.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) == 0:
-            return data.copy()
-        
-        nyq = 0.5 * fs
-        normal_cutoff = cutoff / nyq
-        b, a = butter(order, normal_cutoff, btype="low", analog=False)
-        
-        result = data.copy()
-        result[numeric_cols] = data[numeric_cols].apply(lambda col: filtfilt(b, a, col))
-        return result
-    
-    def apply_highpass_filter(data: pd.DataFrame, cutoff: float, fs: float, order: int = 4) -> pd.DataFrame:
-        """ハイパスフィルタを適用"""
-        if data.empty or fs <= 0 or not 0 < cutoff < fs / 2:
-            return data.copy()
-        
-        numeric_cols = data.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) == 0:
-            return data.copy()
-        
-        nyq = 0.5 * fs
-        normal_cutoff = cutoff / nyq
-        b, a = butter(order, normal_cutoff, btype="high", analog=False)
-        
-        result = data.copy()
-        result[numeric_cols] = data[numeric_cols].apply(lambda col: filtfilt(b, a, col))
-        return result
-    
-    def apply_notch_filter(data: pd.DataFrame, fs: float, notch_freq: float = 50.0, quality: float = 30) -> pd.DataFrame:
-        """ノッチフィルタを適用"""
-        if data.empty or fs <= 0 or not 0 < notch_freq < fs / 2:
-            return data.copy()
-        
-        numeric_cols = data.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) == 0:
-            return data.copy()
-        
-        b, a = iirnotch(notch_freq, quality, fs)
-        
-        result = data.copy()
-        result[numeric_cols] = data[numeric_cols].apply(lambda col: filtfilt(b, a, col))
-        return result
-    
-    def apply_moving_average(data: pd.DataFrame, window_size: int) -> pd.DataFrame:
-        """移動平均を適用"""
-        if data.empty or window_size <= 0:
-            return data.copy()
-        
-        numeric_cols = data.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) == 0:
-            return data.copy()
-        
-        result = data.copy()
-        result[numeric_cols] = data[numeric_cols].rolling(window=window_size, center=True).mean()
-        return result
-    
-    def apply_rectification(data: pd.DataFrame, method: str = "full") -> pd.DataFrame:
-        """整流を適用"""
-        if data.empty:
-            return data.copy()
-        
-        numeric_cols = data.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) == 0:
-            return data.copy()
-        
-        result = data.copy()
-        if method == "full":
-            result[numeric_cols] = data[numeric_cols].abs()
-        elif method == "half":
-            result[numeric_cols] = data[numeric_cols].clip(lower=0)
-        return result
-    
-    def apply_rms_envelope(data: pd.DataFrame, window_size: int) -> pd.DataFrame:
-        """RMSエンベロープを適用"""
-        if data.empty or window_size <= 0:
-            return data.copy()
-        
-        numeric_cols = data.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) == 0:
-            return data.copy()
-        
-        result = data.copy()
-        result[numeric_cols] = (data[numeric_cols] ** 2).rolling(window=window_size, center=True).mean() ** 0.5
-        return result
-    
-    def apply_resampling(data: pd.DataFrame, target_fs: float, current_fs: float) -> pd.DataFrame:
-        """リサンプリングを適用"""
-        if data.empty or target_fs <= 0 or current_fs <= 0:
-            return data.copy()
-        
-        numeric_cols = data.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) == 0:
-            return data.copy()
-        
-        num_samples = int(len(data) * target_fs / current_fs)
-        result = data.copy()
-        for col in numeric_cols:
-            result[col] = resample(data[col], num_samples)
-        return result
-    
-    def apply_fft(data: pd.DataFrame, fs: float, return_magnitude: bool = True) -> pd.DataFrame:
-        """FFTを適用"""
-        if data.empty or fs <= 0:
-            return data.copy()
-        
-        numeric_cols = data.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) == 0:
-            return data.copy()
-        
-        n = len(data)
-        freqs = fftfreq(n, 1/fs)[:n//2]
-        
-        result_data = {}
-        for col in numeric_cols:
-            fft_vals = fft(data[col])
-            if return_magnitude:
-                result_data[col] = 2.0/n * np.abs(fft_vals[:n//2])
-            else:
-                result_data[col] = fft_vals[:n//2]
-        
-        result = pd.DataFrame(result_data, index=freqs)
-        return result
-    
+    from glob import glob
+
+    from modules.data_loader import load_data
+    from modules.plotting import plot_data
+    from modules.signal_processing import apply_lowpass_filter, apply_highpass_filter, apply_notch_filter, \
+        apply_moving_average, apply_rms_envelope, apply_rectification, apply_resampling, apply_fft
     return (
         apply_fft,
         apply_highpass_filter,
@@ -179,22 +23,19 @@ def _():
         apply_notch_filter,
         apply_rectification,
         apply_rms_envelope,
-        apply_resampling,
         glob,
         load_data,
         mo,
         np,
         os,
-        pd,
         plot_data,
-        px,
     )
 
 
 @app.cell
 def _(glob, mo, os):
     # CSVファイル一覧を取得（相対パス）
-    csv_files = glob.glob("data/15Subjects-7Gestures/*/*.csv")
+    csv_files = glob("data/15Subjects-7Gestures/*/*.csv")
     csv_files.sort()
 
     # ファイル選択のための辞書を作成（表示名: パス）
@@ -205,10 +46,10 @@ def _(glob, mo, os):
         dirname = os.path.basename(os.path.dirname(file_path))
         display_name = f"{dirname}/{basename}"
         file_options[display_name] = file_path
-    
+
     file_selector = None
     display_content = None
-    
+
     if not file_options:
         # CSVファイルが見つからない場合のエラーメッセージ
         display_content = mo.md("❌ CSVファイルが見つかりません。データフォルダの場所を確認してください。")
@@ -217,7 +58,7 @@ def _(glob, mo, os):
         default_display = "S0/emg-fistdwn-S0.csv"
         if default_display not in file_options:
             default_display = list(file_options.keys())[0]
-        
+
         # ファイル選択ドロップダウン
         file_selector = mo.ui.dropdown(
             options=file_options,
@@ -225,12 +66,12 @@ def _(glob, mo, os):
             label="CSVファイルを選択",
             searchable=True
         )
-        
+
         display_content = mo.vstack([
             mo.md("### 📁 ファイル選択"),
             file_selector
         ])
-    
+
     # 常に何かを表示
     display_content
 
@@ -238,9 +79,10 @@ def _(glob, mo, os):
 
 
 @app.cell
-def _(file_selector, load_data, mo, np, os, pd):
-    SAMPLING_RATE = 200 
-    
+def _(file_selector, load_data, mo, np, os):
+    import pandas as pd
+    SAMPLING_RATE = 200
+
     # file_selectorがNoneの場合（CSVファイルが見つからない場合）の処理
     if file_selector is None:
         raw_data = pd.DataFrame()
@@ -278,11 +120,13 @@ def _(mo, total_duration):
     # UIコンポーネントの定義
     # 信号処理のパラメータ
     # ローパスフィルタ
-    lowpass_cutoff_input = mo.ui.slider(1.0, 100.0, step=0.1, value=5.0, label="ローパスフィルタのカットオフ周波数 [Hz]")
+    lowpass_cutoff_input = mo.ui.slider(1.0, 100.0, step=0.1, value=5.0,
+                                        label="ローパスフィルタのカットオフ周波数 [Hz]")
     # ハイパスフィルタ
-    highpass_cutoff_input = mo.ui.slider(1.0, 100.0, step=0.1, value=5.0, label="ハイパスフィルタのカットオフ周波数 [Hz]")
+    highpass_cutoff_input = mo.ui.slider(1.0, 100.0, step=0.1, value=5.0,
+                                         label="ハイパスフィルタのカットオフ周波数 [Hz]")
     # ノッチフィルタ
-    notch_freq_input = mo.ui.number(1.0, 100.0, step=0.1, value = 50.0, label="ノッチフィルタの周波数 [Hz]")
+    notch_freq_input = mo.ui.number(1.0, 100.0, step=0.1, value=50.0, label="ノッチフィルタの周波数 [Hz]")
     # 移動平均
     window_slider = mo.ui.slider(1, 101, step=2, value=21, label="移動平均の窓長")
     # RMSエンベロープ
@@ -293,18 +137,18 @@ def _(mo, total_duration):
                                            step=0.1,
                                            value=(0, min(5.0, total_duration)),
                                            label=f"表示範囲(秒) -:{total_duration:.2f}s"
-                                          )
+                                           )
 
     # フィルタ選択
     filter_selection = mo.ui.multiselect(
-        options=["ローパスフィルタ", 
+        options=["ローパスフィルタ",
                  "ハイパスフィルタ",
                  "ノッチフィルタ",
                  "移動平均",
                  "全波整流",
                  "半波整流",
                  "RMSエンベロープ"
-                ],
+                 ],
         value=["ローパスフィルタ"],
         label="適用するフィルタを選択"
     )
@@ -333,24 +177,24 @@ def _(mo, total_duration):
 
 @app.cell
 def _(
-    SAMPLING_RATE,
-    apply_fft,
-    apply_highpass_filter,
-    apply_lowpass_filter,
-    apply_moving_average,
-    apply_notch_filter,
-    apply_rectification,
-    apply_rms_envelope,
-    filter_selection,
-    highpass_cutoff_input,
-    lowpass_cutoff_input,
-    mo,
-    notch_freq_input,
-    plot_data,
-    raw_data,
-    rms_window_slider,
-    time_range_slider,
-    window_slider,
+        SAMPLING_RATE,
+        apply_fft,
+        apply_highpass_filter,
+        apply_lowpass_filter,
+        apply_moving_average,
+        apply_notch_filter,
+        apply_rectification,
+        apply_rms_envelope,
+        filter_selection,
+        highpass_cutoff_input,
+        lowpass_cutoff_input,
+        mo,
+        notch_freq_input,
+        plot_data,
+        raw_data,
+        rms_window_slider,
+        time_range_slider,
+        window_slider,
 ):
     if raw_data.empty:
         result = mo.md("❌ データがありません")
@@ -410,7 +254,7 @@ def _(
         - 適用フィルタ: {', '.join(filter_selection.value) if filter_selection.value else 'なし'}
         - 表示時間範囲: {start_time:.2f}s - {end_time:.2f}s
         - 表示データ点数: {len(sliced_data)} / {len(processed_data)}
-        """    
+        """
 
         # プロット作成
         if not sliced_data.empty:
@@ -431,8 +275,8 @@ def _(
 
             # X軸のラベルを周波数に変更
             freq_domain_fig.update_layout(
-                xaxis_title = '周波数 [Hz]',
-                yaxis_title = '振幅'
+                xaxis_title='周波数 [Hz]',
+                yaxis_title='振幅'
             )
 
             # 両方のプロットを縦に並べて表示
