@@ -16,16 +16,20 @@ def _():
     from scipy.fft import fft, fftfreq
     
     # === データ読み込み関数 ===
-    def load_data(filepath: str) -> pd.DataFrame:
-        """CSVファイルを読み込み，Pandasデータフレームとして返す．"""
+    def load_data(filepath: str):
+        """CSVファイルを読み込み，Pandasデータフレームとデバッグ情報を返す．"""
+        debug_msg = f"Attempting to load: {filepath}"
         try:
             df = pd.read_csv(filepath, index_col=0)
             df.index = pd.to_datetime(df.index, unit='ns')
-            return df
+            debug_msg += f" ✅ Successfully loaded {len(df)} rows"
+            return df, debug_msg
         except FileNotFoundError:
-            return pd.DataFrame()
+            debug_msg += f" ❌ FileNotFoundError: File not found"
+            return pd.DataFrame(), debug_msg
         except Exception as e:
-            return pd.DataFrame()
+            debug_msg += f" ❌ Exception: {str(e)}"
+            return pd.DataFrame(), debug_msg
     
     # === プロット関数 ===
     def plot_data(df: pd.DataFrame, title: str = "Signal Data"):
@@ -321,8 +325,9 @@ def _(file_selector, load_data, mo, np, os, pd):
         raw_data = pd.DataFrame()
         total_duration = 0.0
         info_message = "❌ CSVファイルが見つからないため、データを読み込めません"
+        debug_message = "No file selector available"
     else:
-        raw_data = load_data(file_selector.value)
+        raw_data, debug_message = load_data(file_selector.value)
 
         if not raw_data.empty:
             # 200Hzの時間軸を作成（0秒スタート）
@@ -332,16 +337,24 @@ def _(file_selector, load_data, mo, np, os, pd):
 
             selected_file_name = os.path.basename(file_selector.value)
             info_message = f"""
-            📊 **データ読み込み完了**
-            - 選択ファイル: {selected_file_name}
-            - サンプル数: {len(raw_data)}
-            - 総時間: {total_duration:.2f} 秒
-            - サンプリング周波数: {SAMPLING_RATE} Hz
-            - 時間間隔: {time_interval:.3f} 秒
+### 📊 **データ読み込み完了**
+- **選択ファイル**: {selected_file_name}
+- **サンプル数**: {len(raw_data)}
+- **総時間**: {total_duration:.2f} 秒
+- **サンプリング周波数**: {SAMPLING_RATE} Hz
+- **時間間隔**: {time_interval:.3f} 秒
+
+### 🔍 **読み込みデバッグ情報**
+{debug_message}
             """
         else:
             total_duration = 0.0
-            info_message = "❌ データの読み込みに失敗しました"
+            info_message = f"""
+### ❌ **データの読み込みに失敗しました**
+
+### 🔍 **読み込みデバッグ情報**
+{debug_message}
+            """
 
     mo.md(info_message)
 
