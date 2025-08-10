@@ -8,6 +8,8 @@ app = marimo.App(width="full")
 def _():
     import marimo as mo
     import numpy as np
+    import os
+    from glob import glob
 
     from modules.data_loader import load_data
     from modules.plotting import plot_data
@@ -20,19 +22,56 @@ def _():
         apply_notch_filter,
         apply_rectification,
         apply_rms_envelope,
+        glob,
         load_data,
         mo,
         np,
+        os,
         plot_data,
     )
 
 
 @app.cell
-def _(load_data, mo, np):
-    FILE_PATH = "data/15Subjects-7Gestures/S0/emg-fistdwn-S0.csv"
+def _(glob, mo, os):
+    # CSVファイル一覧を取得
+    csv_files = glob("data/15Subjects-7Gestures/*/*.csv")
+    csv_files.sort()
+    
+    # ファイル選択のための辞書を作成（表示名: パス）
+    file_options = {}
+    for file_path in csv_files:
+        # ファイル名のみを取得して表示用の名前を作成
+        basename = os.path.basename(file_path)
+        dirname = os.path.basename(os.path.dirname(file_path))
+        display_name = f"{dirname}/{basename}"
+        file_options[display_name] = file_path
+    
+    # デフォルトファイルを設定
+    default_display = "S0/emg-fistdwn-S0.csv"
+    if default_display not in file_options:
+        default_display = list(file_options.keys())[0]
+    
+    # ファイル選択ドロップダウン
+    file_selector = mo.ui.dropdown(
+        options=file_options,
+        value=default_display,
+        label="CSVファイルを選択",
+        searchable=True
+    )
+    
+    mo.vstack([
+        mo.md("### 📁 ファイル選択"),
+        file_selector
+    ])
+
+    return file_selector
+
+
+@app.cell
+def _(file_selector, load_data, mo, np, os):
     SAMPLING_RATE = 200 
 
-    raw_data = load_data(FILE_PATH)
+    raw_data = load_data(file_selector.value)
 
     if not raw_data.empty:
         # 200Hzの時間軸を作成（0秒スタート）
@@ -40,8 +79,10 @@ def _(load_data, mo, np):
         raw_data.index = np.arange(len(raw_data)) * time_interval
         total_duration = raw_data.index[-1]
 
+        selected_file_name = os.path.basename(file_selector.value)
         info_message = f"""
         📊 **データ読み込み完了**
+        - 選択ファイル: {selected_file_name}
         - サンプル数: {len(raw_data)}
         - 総時間: {total_duration:.2f} 秒
         - サンプリング周波数: {SAMPLING_RATE} Hz

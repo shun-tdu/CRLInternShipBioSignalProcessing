@@ -38,13 +38,13 @@
 
 # 解説事項
 ## 課題1
-- ### import ~ as ~ 
-- ### 型ヒント
-- ### DocString
-- ### Pandas データフレーム
-- ### try catch except構文
-- ### 相対パスと絶対パス
-- ### CSVファイルとは？
+-[ ] import ~ as ~ 
+-[ ]  型ヒント
+-[ ] DocString
+-[ ] Pandas データフレーム
+-[ ] try catch except構文
+-[ ] 相対パスと絶対パス
+-[ ] CSVファイルとは？
 
 ## 課題2
 - ### scipy
