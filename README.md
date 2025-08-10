@@ -1,113 +1,111 @@
-# ⚠️ このリポジトリはインターン課題作成者用です ⚠️
+<div align="center">
+
+[![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Spaces-yellow)](https://huggingface.co/spaces/YOUR_HF_USERNAME/YOUR_SPACE_ID)
+![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+</div>
+
+<!-- プロジェクトタイトル -->
+<h1 align="center">
+  生体信号インタラクティブ解析ツール
+</h1>
+
+<!-- 概要 -->
+<p align="center">
+  WebブラウザでEMG信号をインタラクティブに解析・可視化できるデモアプリケーションです。<br>
+  MarimoとPlotlyで構築されています。
+</p>
+
+<!-- Hugging Face Spacesへの誘導 -->
+<div align="center">
+  <a href="https://shuty-crlinternshipbiosignalprocessing.hf.space">
+    <img src="https://huggingface.co/datasets/huggingface/badges/raw/main/open-in-hf-spaces-xl-dark.svg" alt="Open in Hugging Face Spaces">
+  </a>
+</div>
+<br>
+<p align="center">
+  <img src="images/interactive%20plot_demo.gif" alt="Demo GIF" width="85%">
+</p>
 
 ---
 
-# 生体信号解析インターンシップ課題 🔬
+## 📖 概要
 
-このリポジトリは、協調ロボティクス研究室のインターンシップで利用する生体信号解析の課題管理用です。 CSVデータの可視化から、信号処理、インタラクティブなグラフ作成までを実践的に学びます。
+このプロジェクトは、研究室のインターンシップ課題として開発されました。CSV形式のEMG（筋電図）データを読み込み、様々な信号処理フィルタをインタラクティブに適用しながら、時間領域と周波数領域でリアルタイムに結果を可視化することを目的としています。
 
+モジュール単位で実装していき、最終的に本ページのデモアプリケーションを組み上げていく課題です。
 
-
----
-
-## 目次
-- [使用技術](#-使用技術)
-- [環境構築](#-環境構築)
-- [実行方法](#-実行方法)
-- [課題一覧](#-課題一覧)
+実際にプログラムを組みながら信号処理アプリケーションを作成しましょう！
 
 ---
-## 🎉 目標
 
+## ✨ 主な機能
+
+* **インタラクティブな操作**: スライダーやドロップダウンで、フィルタのパラメータや表示範囲を直感的に変更可能
+* **多彩な信号処理**: ローパス、ハイパス、ノッチフィルタ、移動平均、整流、RMSエンベロープなど
+* **リアルタイム可視化**: 時間領域の波形と、FFTによる周波数スペクトルを同時に表示
+* **インストール不要**: Hugging Face Spaces上で、誰でもすぐにデモを試すことができます
 
 ---
 
 ## 🛠️ 使用技術
-本プロジェクトでは、以下のライブラリやツールを使用します。
-- Python 3.10+
-- Pandas
-- Matplotlib
-- Plotly
-- Marimo
-- Git / GitHub
+
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/pandas-150458?style=for-the-badge&logo=pandas&logoColor=white" alt="Pandas">
+  <img src="https://img.shields.io/badge/Plotly-3F4F75?style=for-the-badge&logo=plotly&logoColor=white" alt="Plotly">
+  <img src="https://img.shields.io/badge/marimo-333333?style=for-the-badge&logo=marimo&logoColor=white" alt="Marimo">
+  <img src="https://img.shields.io/badge/Hugging%20Face-FFD21E?style=for-the-badge&logo=hugging-face&logoColor=black" alt="Hugging Face">
+</p>
+
 
 ---
 
-## 💻 環境構築
-このプロジェクトを自分のPCで動かすための手順です。
+
+## 🚀 課題の始め方
+
+このリポジトリは，インタラクティブな生体信号処理アプリケーションを作成するため課題です、最終的にはデモのようなアプリケーションを自分で構築することを目指します。
+
+### 1. **環境構築**
+まずは、自分のPCで開発を始めるための準備をします。
+
+### 前提条件
+* [Python 3.10](https://www.python.org/) 以上
+* [Git](https://git-scm.com/)
+
+### セットアップと実行
 
 1.  **リポジトリをクローン**
     ```bash
-    git clone [https://github.com/YOUR-ORGANIZATION/intern-bio-signal-analysis.git](https://github.com/YOUR-ORGANIZATION/intern-bio-signal-analysis.git)
-    cd intern-bio-signal-analysis
+    git clone [https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO.git](https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO.git)
+    cd YOUR_REPO
     ```
 
-2.  **Python仮想環境の作成と有効化**
+2.  **仮想環境の作成と有効化**
     ```bash
-    # Mac / Linux
-    python3 -m venv venv
-    source venv/bin/activate
-
-    # Windows
-    python -m venv venv
-    .\venv\Scripts\activate
+    python -m venv .venv
+    source .\.venv\Scripts\activate
     ```
-    *(ターミナルの行頭に `(venv)` と表示されれば成功です)*
+    *(ターミナルの行頭に`(venv)`と表示されれば成功です)*
 
-3.  **必要なライブラリのインストール**
+3.  **依存ライブラリのインストール**
     ```bash
     pip install -r requirements.txt
     ```
 
----
-
-## 🚀 実行方法
-各課題のファイルは、プロジェクトのルートディレクトリから以下のコマンドで実行できます。
-
-```bash
-# 課題1の実行
-python task1.py
-
-# 課題2の実行
-python task2.py
-
-# 課題3の実行 (marimo)
-marimo run task3.py
-```
+4.  **Marimoノートブックの実行**
+    ```bash
+    marimo run your_notebook_name.py
+    ```
+    *(`your_notebook_name.py` はあなたのファイル名に置き換えてください)*
 
 ---
 
-## ✅ 課題一覧
-各課題の詳細は、以下のIssueページを確認してください。
+## 📄 ライセンス
 
-- 課題1: CSVデータのグラフ化
-- 課題2: 信号処理と特徴量抽出
-- 課題3: インタラクティブな可視化
-
-不明点があれば、Slackにて気軽に質問してください。
-
----
-
-### 課題1
-### 目的 生体信号の生値をグラフ化する
-### 手順
-- CSVを読み取ってデータフレームを返す関数
-- データフレームをプロットする関数を作成
-- ノートブックから読み出してプロット
-
-### 課題2
-### 目的 データフレームに信号処理をしてグラフ化する．
-### 手順
--  DFに対して信号処理をする関数を作成
--  LPF, HPF, Notch, 移動平均, RMSエンベロープ, 整流, リサンプリング, FFT
--  信号処理をしたDFをプロット
-
-### 課題3
-### 目的 インタラクティブにグラフを表示してみよう
-### 手順
-- 今まで作った関数をインポートしてmarimoノートブックに統合
-- UIベースでフィルターを選べて重ねがけできる
-- 好きな窓長さでプロットできる
+このプロジェクトは [MIT License](LICENSE) の下に公開されています。
 
 ---
 
@@ -137,5 +135,3 @@ marimo run task3.py
 -  marimo
 -  plotly
 
-## 🌊🍃Marimo Tips
-- MarimoのUI要素は一番外のインデントじゃないと評価されない
