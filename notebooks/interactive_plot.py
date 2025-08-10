@@ -198,28 +198,31 @@ def _(glob, mo, os):
         # marimo.notebook_location()を使用してWASM対応のパス取得
         notebook_location = mo.notebook_location()
         if notebook_location:
-            # WASM環境ではpublicフォルダからデータを取得
-            data_path = notebook_location / "public" / "data" / "15Subjects-7Gestures" / "*" / "*.csv"
-            csv_files = glob.glob(str(data_path))
-            # WASM環境でglob.globが機能しない場合の手動ファイルリスト作成
-            if not csv_files:
-                # 既知のファイルパターンで手動リストを作成
-                subjects = [f"S{i}" for i in range(15)]
-                gestures = ["emg-fistdwn",
-                            "emg-fistout",
-                            "emg-left",
-                            "emg-neut",
-                            "emg-opendwn",
-                            "emg-openout",
-                            "emg-right",
-                            "emg-tap",
-                            "emg-twodwn",
-                            "emg-twout"]
-                csv_files = []
-                for subject in subjects:
-                    for gesture in gestures:
-                        file_path = notebook_location / "public" / "data" / "15Subjects-7Gestures" / subject / f"{gesture}-{subject}.csv"
-                        csv_files.append(str(file_path))
+            # WASM環境では確実に存在するファイルのみをリストに含める
+            # 全てのsubject/gestureの組み合わせをチェック
+            subjects_gestures = [
+                ("S0", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-openout", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
+                ("S1", ["emg-fistdwn", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
+                ("S2", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-openout", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
+                ("S3", ["emg-fistdwn", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
+                ("S4", ["emg-fistdwn", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
+                ("S5", ["emg-fistdwn", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
+                ("S6", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-openout", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
+                ("S7", ["emg-fistdwn", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
+                ("S8", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
+                ("S9", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-openout", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
+                ("S10", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-openout", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
+                ("S11", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-openout", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
+                ("S12", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-openout", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
+                ("S13", ["emg-fistdwn", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
+                ("S14", ["emg-fistdwn", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"])
+            ]
+            
+            csv_files = []
+            for subject, gestures in subjects_gestures:
+                for gesture in gestures:
+                    file_path = notebook_location / "public" / "data" / "15Subjects-7Gestures" / subject / f"{gesture}-{subject}.csv"
+                    csv_files.append(str(file_path))
         else:
             # フォールバック: 従来の相対パス
             csv_files = glob.glob("data/15Subjects-7Gestures/*/*.csv")
