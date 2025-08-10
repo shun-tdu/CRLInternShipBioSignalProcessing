@@ -8,173 +8,12 @@ app = marimo.App(width="full")
 def _():
     import marimo as mo
     import numpy as np
-    import pandas as pd
     import os
-    import glob
-    import plotly.express as px
-    from scipy.signal import butter, filtfilt, iirnotch, resample
-    from scipy.fft import fft, fftfreq
-    
-    # === データ読み込み関数 ===
-    def load_data(filepath: str):
-        """CSVファイルを読み込み，Pandasデータフレームとデバッグ情報を返す．"""
-        debug_msg = f"Attempting to load: {filepath}"
-        try:
-            df = pd.read_csv(filepath, index_col=0)
-            df.index = pd.to_datetime(df.index, unit='ns')
-            debug_msg += f" ✅ Successfully loaded {len(df)} rows"
-            return df, debug_msg
-        except FileNotFoundError:
-            debug_msg += f" ❌ FileNotFoundError: File not found"
-            return pd.DataFrame(), debug_msg
-        except Exception as e:
-            debug_msg += f" ❌ Exception: {str(e)}"
-            return pd.DataFrame(), debug_msg
-    
-    # === プロット関数 ===
-    def plot_data(df: pd.DataFrame, title: str = "Signal Data"):
-        """データフレームをインタラクティブなグラフとして描画する．"""
-        if df.empty:
-            return px.line(title="データがありません")
-        
-        fig = px.line(df, x=df.index, y=df.columns, title=title)
-        fig.update_layout(
-            xaxis_title='Time',
-            yaxis_title='Value',
-            legend_title='Signals'
-        )
-        return fig
-    
-    # === 信号処理関数 ===
-    def apply_lowpass_filter(data: pd.DataFrame, cutoff: float, fs: float, order: int = 4) -> pd.DataFrame:
-        """ローパスフィルタを適用"""
-        if data.empty or fs <= 0 or not 0 < cutoff < fs / 2:
-            return data.copy()
-        
-        numeric_cols = data.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) == 0:
-            return data.copy()
-        
-        nyq = 0.5 * fs
-        normal_cutoff = cutoff / nyq
-        b, a = butter(order, normal_cutoff, btype="low", analog=False)
-        
-        result = data.copy()
-        result[numeric_cols] = data[numeric_cols].apply(lambda col: filtfilt(b, a, col))
-        return result
-    
-    def apply_highpass_filter(data: pd.DataFrame, cutoff: float, fs: float, order: int = 4) -> pd.DataFrame:
-        """ハイパスフィルタを適用"""
-        if data.empty or fs <= 0 or not 0 < cutoff < fs / 2:
-            return data.copy()
-        
-        numeric_cols = data.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) == 0:
-            return data.copy()
-        
-        nyq = 0.5 * fs
-        normal_cutoff = cutoff / nyq
-        b, a = butter(order, normal_cutoff, btype="high", analog=False)
-        
-        result = data.copy()
-        result[numeric_cols] = data[numeric_cols].apply(lambda col: filtfilt(b, a, col))
-        return result
-    
-    def apply_notch_filter(data: pd.DataFrame, fs: float, notch_freq: float = 50.0, quality: float = 30) -> pd.DataFrame:
-        """ノッチフィルタを適用"""
-        if data.empty or fs <= 0 or not 0 < notch_freq < fs / 2:
-            return data.copy()
-        
-        numeric_cols = data.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) == 0:
-            return data.copy()
-        
-        b, a = iirnotch(notch_freq, quality, fs)
-        
-        result = data.copy()
-        result[numeric_cols] = data[numeric_cols].apply(lambda col: filtfilt(b, a, col))
-        return result
-    
-    def apply_moving_average(data: pd.DataFrame, window_size: int) -> pd.DataFrame:
-        """移動平均を適用"""
-        if data.empty or window_size <= 0:
-            return data.copy()
-        
-        numeric_cols = data.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) == 0:
-            return data.copy()
-        
-        result = data.copy()
-        result[numeric_cols] = data[numeric_cols].rolling(window=window_size, center=True).mean()
-        return result
-    
-    def apply_rectification(data: pd.DataFrame, method: str = "full") -> pd.DataFrame:
-        """整流を適用"""
-        if data.empty:
-            return data.copy()
-        
-        numeric_cols = data.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) == 0:
-            return data.copy()
-        
-        result = data.copy()
-        if method == "full":
-            result[numeric_cols] = data[numeric_cols].abs()
-        elif method == "half":
-            result[numeric_cols] = data[numeric_cols].clip(lower=0)
-        return result
-    
-    def apply_rms_envelope(data: pd.DataFrame, window_size: int) -> pd.DataFrame:
-        """RMSエンベロープを適用"""
-        if data.empty or window_size <= 0:
-            return data.copy()
-        
-        numeric_cols = data.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) == 0:
-            return data.copy()
-        
-        result = data.copy()
-        result[numeric_cols] = (data[numeric_cols] ** 2).rolling(window=window_size, center=True).mean() ** 0.5
-        return result
-    
-    def apply_resampling(data: pd.DataFrame, target_fs: float, current_fs: float) -> pd.DataFrame:
-        """リサンプリングを適用"""
-        if data.empty or target_fs <= 0 or current_fs <= 0:
-            return data.copy()
-        
-        numeric_cols = data.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) == 0:
-            return data.copy()
-        
-        num_samples = int(len(data) * target_fs / current_fs)
-        result = data.copy()
-        for col in numeric_cols:
-            result[col] = resample(data[col], num_samples)
-        return result
-    
-    def apply_fft(data: pd.DataFrame, fs: float, return_magnitude: bool = True) -> pd.DataFrame:
-        """FFTを適用"""
-        if data.empty or fs <= 0:
-            return data.copy()
-        
-        numeric_cols = data.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) == 0:
-            return data.copy()
-        
-        n = len(data)
-        freqs = fftfreq(n, 1/fs)[:n//2]
-        
-        result_data = {}
-        for col in numeric_cols:
-            fft_vals = fft(data[col])
-            if return_magnitude:
-                result_data[col] = 2.0/n * np.abs(fft_vals[:n//2])
-            else:
-                result_data[col] = fft_vals[:n//2]
-        
-        result = pd.DataFrame(result_data, index=freqs)
-        return result
-    
+    from glob import glob
+
+    from modules.data_loader import load_data
+    from modules.plotting import plot_data
+    from modules.signal_processing import apply_lowpass_filter, apply_highpass_filter, apply_notch_filter, apply_moving_average,  apply_rms_envelope, apply_rectification, apply_resampling, apply_fft
     return (
         apply_fft,
         apply_highpass_filter,
@@ -183,89 +22,21 @@ def _():
         apply_notch_filter,
         apply_rectification,
         apply_rms_envelope,
-        apply_resampling,
         glob,
         load_data,
         mo,
         np,
         os,
-        pd,
         plot_data,
-        px,
     )
 
 
 @app.cell
 def _(glob, mo, os):
-    # CSVファイル一覧を取得（WASM対応・デバッグ強化版）
-    debug_info = []
-    try:
-        # marimo.notebook_location()を使用してWASM対応のパス取得
-        notebook_location = mo.notebook_location()
-        debug_info.append(f"notebook_location: {notebook_location}")
-        
-        if notebook_location:
-            # GitHub Pages環境では、サブディレクトリにデプロイされる可能性があるため
-            # 複数のパスパターンを試す
-            possible_paths = [
-                "public/data/15Subjects-7Gestures",  # 直接パス
-                "/public/data/15Subjects-7Gestures", # 絶対パス
-            ]
-            
-            # 実際に存在するファイルの組み合わせを定義
-            subjects_gestures = [
-                ("S0", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-openout", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
-                ("S1", ["emg-fistdwn", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]),
-                ("S2", ["emg-fistdwn", "emg-fistout", "emg-left", "emg-neut", "emg-opendwn", "emg-openout", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"])
-            ]
-            
-            csv_files = []
-            
-            # 各パスパターンを試す
-            for base_path in possible_paths:
-                if str(notebook_location).startswith('http'):
-                    # Web環境の場合、URLとして構築
-                    for subject, gestures in subjects_gestures:
-                        for gesture in gestures:
-                            file_url = f"{notebook_location.rstrip('/')}/{base_path.lstrip('/')}/{subject}/{gesture}-{subject}.csv"
-                            csv_files.append(file_url)
-                            debug_info.append(f"Generated URL: {file_url}")
-                    break
-                else:
-                    # ローカル環境の場合、パスとして構築
-                    for subject, gestures in subjects_gestures:
-                        for gesture in gestures:
-                            file_path = notebook_location / base_path / subject / f"{gesture}-{subject}.csv"
-                            csv_files.append(str(file_path))
-                            debug_info.append(f"Generated path: {file_path}")
-                    break
-                    
-            # より多くのファイルを追加（テスト用）
-            if len(csv_files) < 10:  # もし少なすぎる場合
-                for i in range(4, 15):
-                    subject = f"S{i}"
-                    for gesture in ["emg-fistdwn", "emg-left", "emg-neut", "emg-opendwn", "emg-right", "emg-tap", "emg-twodwn", "emg-twout"]:
-                        if str(notebook_location).startswith('http'):
-                            file_url = f"{notebook_location.rstrip('/')}/public/data/15Subjects-7Gestures/{subject}/{gesture}-{subject}.csv"
-                            csv_files.append(file_url)
-                        else:
-                            file_path = notebook_location / "public" / "data" / "15Subjects-7Gestures" / subject / f"{gesture}-{subject}.csv"
-                            csv_files.append(str(file_path))
-        else:
-            # フォールバック: 従来の相対パス
-            csv_files = glob.glob("data/15Subjects-7Gestures/*/*.csv")
-            debug_info.append("Using fallback glob pattern")
-            
-    except Exception as e:
-        # エラー時のフォールバック
-        csv_files = glob.glob("data/15Subjects-7Gestures/*/*.csv")
-        debug_info.append(f"Exception occurred: {str(e)}")
-        
-    debug_info.append(f"Total files found: {len(csv_files)}")
-    debug_info.append(f"First few files: {csv_files[:3] if csv_files else 'None'}")
-    
+    # CSVファイル一覧を取得
+    csv_files = glob("data/15Subjects-7Gestures/*/*.csv")
     csv_files.sort()
-
+    
     # ファイル選択のための辞書を作成（表示名: パス）
     file_options = {}
     for file_path in csv_files:
@@ -275,86 +46,51 @@ def _(glob, mo, os):
         display_name = f"{dirname}/{basename}"
         file_options[display_name] = file_path
     
-    file_selector = None
-    display_content = None
+    # デフォルトファイルを設定
+    default_display = "S0/emg-fistdwn-S0.csv"
+    if default_display not in file_options:
+        default_display = list(file_options.keys())[0]
     
-    # デバッグ情報の表示
-    debug_content = mo.md(f"""
-    ### 🐛 デバッグ情報
-    {chr(10).join(debug_info)}
-    """)
+    # ファイル選択ドロップダウン
+    file_selector = mo.ui.dropdown(
+        options=file_options,
+        value=default_display,
+        label="CSVファイルを選択",
+        searchable=True
+    )
     
-    if not file_options:
-        # CSVファイルが見つからない場合のエラーメッセージ
-        display_content = mo.vstack([
-            mo.md("❌ CSVファイルが見つかりません。データフォルダの場所を確認してください。"),
-            debug_content
-        ])
-    else:
-        # デフォルトファイルを設定
-        default_display = "S0/emg-fistdwn-S0.csv"
-        if default_display not in file_options:
-            default_display = list(file_options.keys())[0]
-        
-        # ファイル選択ドロップダウン
-        file_selector = mo.ui.dropdown(
-            options=file_options,
-            value=default_display,
-            label="CSVファイルを選択",
-            searchable=True
-        )
-        
-        display_content = mo.vstack([
-            mo.md("### 📁 ファイル選択"),
-            file_selector,
-            debug_content
-        ])
-    
-    # 常に何かを表示
-    display_content
+    mo.vstack([
+        mo.md("### 📁 ファイル選択"),
+        file_selector
+    ])
 
     return file_selector
 
 
 @app.cell
-def _(file_selector, load_data, mo, np, os, pd):
+def _(file_selector, load_data, mo, np, os):
     SAMPLING_RATE = 200 
-    
-    # file_selectorがNoneの場合（CSVファイルが見つからない場合）の処理
-    if file_selector is None:
-        raw_data = pd.DataFrame()
-        total_duration = 0.0
-        info_message = "❌ CSVファイルが見つからないため、データを読み込めません"
-        debug_message = "No file selector available"
+
+    raw_data = load_data(file_selector.value)
+
+    if not raw_data.empty:
+        # 200Hzの時間軸を作成（0秒スタート）
+        time_interval = 1.0 / SAMPLING_RATE  # 0.005秒間隔
+        raw_data.index = np.arange(len(raw_data)) * time_interval
+        total_duration = raw_data.index[-1]
+
+        selected_file_name = os.path.basename(file_selector.value)
+        info_message = f"""
+        📊 **データ読み込み完了**
+        - 選択ファイル: {selected_file_name}
+        - サンプル数: {len(raw_data)}
+        - 総時間: {total_duration:.2f} 秒
+        - サンプリング周波数: {SAMPLING_RATE} Hz
+        - 時間間隔: {time_interval:.3f} 秒
+        """
     else:
-        raw_data, debug_message = load_data(file_selector.value)
-
-        if not raw_data.empty:
-            # 200Hzの時間軸を作成（0秒スタート）
-            time_interval = 1.0 / SAMPLING_RATE  # 0.005秒間隔
-            raw_data.index = np.arange(len(raw_data)) * time_interval
-            total_duration = raw_data.index[-1]
-
-            selected_file_name = os.path.basename(file_selector.value)
-            info_message = f"""
-### 📊 **データ読み込み完了**
-- **選択ファイル**: {selected_file_name}
-- **サンプル数**: {len(raw_data)}
-- **総時間**: {total_duration:.2f} 秒
-- **サンプリング周波数**: {SAMPLING_RATE} Hz
-- **時間間隔**: {time_interval:.3f} 秒
-
-### 🔍 **読み込みデバッグ情報**
-{debug_message}
-            """
-        else:
-            total_duration = 0.0
-            info_message = f"""
-### ❌ **データの読み込みに失敗しました**
-
-### 🔍 **読み込みデバッグ情報**
-{debug_message}
-            """
+        total_duration = 0.0
+        info_message = "❌ データの読み込みに失敗しました"
 
     mo.md(info_message)
 
